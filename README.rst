@@ -108,7 +108,13 @@ Setup dev instance of JupyterHub on Minikube
 
      docker build -t "jupyter/scipy-notebook:latest" .
 
-9. Add JupyterHub::
+9. Update the JupyterHub config file
+
+   Generate API keys using::
+
+     openssl rand -hex 32
+
+10. Add JupyterHub::
 
      helm repo add jupyterhub https://jupyterhub.github.io/helm-chart/
      helm repo update
