@@ -1,0 +1,93 @@
+proxy:
+  secretToken: 760ab387bf959666738cf344d2c27c7a01b196d9a06d079cc69ffda9946c7fcb
+  service:
+    type: NodePort
+    nodePorts:
+      http: 31212
+  chp:
+    resources:
+      requests:
+        memory: 0
+        cpu: 0
+
+hub:
+  cookieSecret: 447ef6457c80070857bfd58eb315cd38d1262731fd7f4f763b132b56548c6935
+  db:
+    type: postgres
+    url: postgres+psycopg2://hubdbadmin:changeme@postgres-postgresql.default.svc.cluster.local:5432/hub
+  resources:
+    requests:
+      memory: 0
+      cpu: 0
+  services:
+    test:
+      admin: true
+      apiToken: 62b8ed0e59dca768f4ab782ebe0419558801e5c558c648da5f26e10cb1b7f289
+  extraConfig:
+    myConfig: |
+      from kubespawner import KubeSpawner
+      
+      class MyKubeSpawner(KubeSpawner):
+        def start(self):
+          options = self.user_options
+          self.log.debug(options)
+          if options:
+            kubespawner_override = options.get('kubespawner_override', {})
+            for k, v in kubespawner_override.items():
+              if callable(v):
+                v = v(self)
+                self.log.debug(".. overriding KubeSpawner value %s=%s (callable result)", k, v)
+              else:
+                self.log.debug(".. overriding KubeSpawner value %s=%s", k, v)
+
+              setattr(self, k, v)
+
+          return super().start()
+
+      c.JupyterHub.spawner_class = MyKubeSpawner
+
+      c.Spawner.args = [
+        '--NotebookApp.allow_origin=*'
+      ]
+
+      c.JupyterHub.tornado_settings = {
+        'headers': {
+          'Content-Security-Policy': "frame-ancestors 'self' http://localhost:5000",
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-xsrftoken, ETag',
+          'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,PATCH,OPTIONS',
+          'Cache-Control': 'no-cache'
+        }
+      }
+
+singleuser:
+  storage:
+    type: none
+  cpu:
+    limit: .5
+    guarantee: .2
+  memory:
+    limit: 1G
+    guarantee: 0.5G
+  image:
+    name: jupyter/scipy-notebook
+    tag: latest
+    imagePullPolicy: Always
+
+prePuller:
+  hook:
+    enabled: false
+
+# user scheduler - pack users tight on some nodes
+scheduling:
+  userScheduler:
+    enabled: true
+
+# culling old users, unit: seconds    
+cull:
+  enabled: true
+  timeout: 1800
+  every: 300
+
+debug:
+  enabled: true
