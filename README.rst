@@ -104,7 +104,7 @@ Setup dev instance of JupyterHub on Minikube
 
 8. Add custom Docker image for Jupyter Server container
 
-   Install the image found at https://github.com/markmo/scipy-notebook
+   Install the image found at https://github.com/markmo/scipy-notebook::
 
      docker build -t "jupyter/scipy-notebook:latest" .
 
